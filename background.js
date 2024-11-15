@@ -1,16 +1,26 @@
 let timerStarted = false;
 let nonEducationalTimerStarted = false;
 const educationalKeywords = ["tutorial", "lecture", "lesson", "course", "how to", "education"];
+const cooldownPeriod = 60 * 60 * 1000; // 1 hour in milliseconds
 
-// Monitor navigation to detect Shorts and non-educational content
 chrome.webNavigation.onHistoryStateUpdated.addListener(async (details) => {
   if (details.url.includes("/shorts/")) {
-    // Start timer for Shorts
-    if (!timerStarted) {
-      chrome.alarms.create("notifyWarningAlarm", { delayInMinutes: 1 });
-      timerStarted = true;
-      console.log("Shorts timer started.");
-    }
+    const currentTime = Date.now();
+
+    // Check if cooldown period is active
+    chrome.storage.local.get("shortsBlockTimestamp", (data) => {
+      const lastBlockTime = data.shortsBlockTimestamp || 0;
+      if (currentTime - lastBlockTime < cooldownPeriod) {
+        // Cooldown active: redirect Shorts immediately
+        chrome.tabs.update(details.tabId, { url: "https://www.youtube.com/" });
+        console.log("Shorts are still blocked due to cooldown.");
+      } else if (!timerStarted) {
+        // Start timer if cooldown is over
+        chrome.alarms.create("notifyWarningAlarm", { delayInMinutes: 1 });
+        timerStarted = true;
+        console.log("Shorts timer started.");
+      }
+    });
   } else if (details.url.includes("/watch")) {
     // Classify video content if on a standard YouTube video
     const tabId = details.tabId;
@@ -60,7 +70,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
       title: "Warning: Shorts will be blocked soon",
       message: "You've spent 1 minute on Shorts. Access will be blocked in 2 minutes."
     });
-    chrome.alarms.create("blockShortsAlarm", { delayInMinutes: 2 });
+    chrome.alarms.create("blockShortsAlarm", { delayInMinutes: 1});
 
   } else if (alarm.name === "blockShortsAlarm") {
     chrome.notifications.create({
@@ -74,8 +84,11 @@ chrome.alarms.onAlarm.addListener((alarm) => {
         chrome.tabs.update(tab.id, { url: "https://www.youtube.com/" });
       });
     });
-    timerStarted = false; // Reset timer for the next session
 
+    // Store the current timestamp to enforce cooldown
+    chrome.storage.local.set({ shortsBlockTimestamp: Date.now() });
+
+    timerStarted = false; // Reset timer for next session
   } else if (alarm.name === "nonEducationalContentAlarm") {
     chrome.notifications.create({
       type: "basic",

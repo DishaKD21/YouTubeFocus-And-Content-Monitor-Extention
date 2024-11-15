@@ -52,3 +52,30 @@ const observer = new MutationObserver((mutations) => {
 
 // Start observing the target node for configured mutations
 observer.observe(document.body, { childList: true, subtree: true });
+
+function addPieChartButton() {
+  if (document.querySelector("#pieChartButton")) return; // Avoid duplicate buttons
+
+  const header = document.querySelector("#container.ytd-masthead");
+  if (header) {
+    const button = document.createElement("button");
+    button.id = "pieChartButton";
+    button.textContent = "View Pie Chart";
+    button.style.cssText = `
+      background-color: #cc0000;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 5px;
+      margin-left: 10px;
+    `;
+    header.appendChild(button);
+    button.addEventListener("click", () => {
+      alert("Pie chart will be displayed here!");
+    });
+  }
+}
+
+addPieChartButton();
