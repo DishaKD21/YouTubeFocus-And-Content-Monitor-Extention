@@ -1,33 +1,161 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Remove Shorts Popup</title>
-<style>
-  body {
-    text-align: center;
-    font-family: 'Arial', sans-serif;
-    padding: 10px;
-  }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FocusTube</title>
+    <style>
+      body {
+        width: 280px;
+        margin: 0;
+        padding: 14px;
+        font-family: Arial, sans-serif;
+        background: #f7f7f7;
+        color: #1f1f1f;
+      }
 
-  .logo-image {
-    max-width: 100%;
-    height: auto;
-  }
+      .panel {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
 
-  .title {
-    color: #cc0000; /* YouTube red color */
-    font-size: 24px;
-    font-weight: bold;
-    margin: 20px 0;
-  }
-</style>
-</head>
-<body>
-  <div>
-    <img src="images/shorts-remove.png" alt="Remove Shorts Logo" class="logo-image">
-    <h1 class="title">Shorts Remover</h1>
-  </div>
-</body>
+      .setting {
+        background: #ffffff;
+        border: 1px solid #e2e2e2;
+        border-radius: 10px;
+        padding: 10px 12px;
+      }
+
+      .setting-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+
+      .setting-label {
+        font-size: 15px;
+        font-weight: 600;
+      }
+
+      .toggle {
+        border: none;
+        border-radius: 999px;
+        padding: 7px 14px;
+        min-width: 64px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        background: #d7d7d7;
+        color: #333;
+        transition: all 0.2s ease;
+      }
+
+      .toggle.on {
+        background: #0f9d58;
+        color: #fff;
+      }
+
+      .status {
+        font-size: 12px;
+        line-height: 1.4;
+        color: #4c4c4c;
+      }
+
+      .modal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 999;
+      }
+
+      .modal.visible {
+        display: flex;
+      }
+
+      .modal-card {
+        width: 220px;
+        background: white;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.2);
+      }
+
+      .modal-card h3 {
+        margin: 0 0 12px;
+        text-align: center;
+        font-size: 16px;
+      }
+
+      .modal-card p {
+        margin: 0 0 10px;
+        text-align: center;
+        font-size: 13px;
+        color: #444;
+      }
+
+      .duration-option,
+      .cancel-button {
+        width: 100%;
+        border: none;
+        border-radius: 8px;
+        margin-top: 8px;
+        padding: 10px 12px;
+        font-size: 13px;
+        cursor: pointer;
+        background: #ececec;
+        color: #1f1f1f;
+      }
+
+      .duration-option:hover,
+      .cancel-button:hover {
+        background: #e0e0e0;
+      }
+
+      .duration-option.primary {
+        background: #cc0000;
+        color: white;
+      }
+
+      .duration-option.primary:hover {
+        background: #a80000;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="panel">
+      <div class="setting">
+        <div class="setting-row">
+          <span class="setting-label">Blank Page</span>
+          <button type="button" id="blankToggle" class="toggle" aria-pressed="false">OFF</button>
+        </div>
+        <div id="blankStatus" class="status">Blank Page is currently OFF.</div>
+      </div>
+
+      <div class="setting">
+        <div class="setting-row">
+          <span class="setting-label">Shorts Blocking</span>
+          <button type="button" id="shortsToggle" class="toggle" aria-pressed="false">OFF</button>
+        </div>
+        <div id="shortsStatus" class="status">Shorts Blocking is currently OFF.</div>
+      </div>
+    </div>
+
+    <div id="durationModal" class="modal" aria-hidden="true">
+      <div class="modal-card">
+        <h3>Disable Shorts Blocking</h3>
+        <p>How long do you want Shorts to stay unblocked?</p>
+        <button class="duration-option primary" data-duration="300000">5 Minutes</button>
+        <button class="duration-option" data-duration="3600000">1 Hour</button>
+        <button class="duration-option" data-duration="manual">Until Manually Enabled</button>
+        <button class="cancel-button" id="cancelDuration">Cancel</button>
+      </div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
 </html>

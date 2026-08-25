@@ -1,60 +1,70 @@
 const styleTag = document.createElement("style");
-const styleContents = document.createTextNode(`
-ytd-mini-guide-entry-renderer[aria-label="Shorts"],
-ytd-rich-section-renderer,
-ytd-reel-shelf-renderer ,
-[title="Shorts"]  {
-     display: none; 
-    }
-`);
-styleTag.appendChild(styleContents);
+styleTag.id = "focusTubeStyles";
 document.body.prepend(styleTag);
 
-function removeUIElements() {
-  // Remove the Shorts button from the sidebar
-  const shortsButton = document.querySelector(
-    'ytd-mini-guide-entry-renderer[aria-label="Shorts"]'
-  );
-  if (shortsButton) {
-    shortsButton.remove();
-  }
-
-  // Remove the Shorts carousel drawer
-  const carousels = document.querySelectorAll(
-    "ytd-rich-section-renderer, ytd-reel-shelf-renderer"
-  );
-  carousels.forEach((carousel) => {
-    // Add specific condition to target Shorts carousel if needed
-    carousel.remove();
-  });
-
-  const otherShortsButtons = document.querySelectorAll('[title="Shorts"]');
-  otherShortsButtons.forEach((node) => node.remove());
+function normalizeState(rawState = {}) {
+  return {
+    shortsBlockingEnabled: false,
+    shortsTemporarilyDisabledUntil: null,
+    blankPageEnabled: false,
+    ...rawState,
+  };
 }
 
-// Remove the UI elements on initial page load
-removeUIElements();
+function applyFocusStyles(state) {
+  const temporaryDisableUntil = Number(state.shortsTemporarilyDisabledUntil || 0);
+  const isTemporarilyDisabled = temporaryDisableUntil > Date.now();
+  const shouldBlockShorts = Boolean(state.shortsBlockingEnabled) && !isTemporarilyDisabled;
+  const blankPageOn = Boolean(state.blankPageEnabled);
 
-// Use a MutationObserver to handle dynamic content/AJAX
-const observer = new MutationObserver((mutations) => {
-  let shouldRemoveElements = false;
-  for (const mutation of mutations) {
-    if (mutation.addedNodes.length > 0) {
-      shouldRemoveElements = true;
-      break;
+  document.body.setAttribute("data-focustube-shorts-blocked", shouldBlockShorts ? "true" : "false");
+  document.body.setAttribute("data-focustube-blank-page", blankPageOn ? "true" : "false");
+  document.body.style.background = blankPageOn ? "#fff" : "";
+
+  styleTag.textContent = `
+    body[data-focustube-shorts-blocked="true"] ytd-mini-guide-entry-renderer[aria-label="Shorts"],
+    body[data-focustube-shorts-blocked="true"] ytd-rich-section-renderer,
+    body[data-focustube-shorts-blocked="true"] ytd-reel-shelf-renderer,
+    body[data-focustube-shorts-blocked="true"] [title="Shorts"] {
+      display: none !important;
     }
-  }
 
-  if (shouldRemoveElements) {
-    removeUIElements();
+    body[data-focustube-blank-page="true"] ytd-rich-grid-renderer,
+    body[data-focustube-blank-page="true"] ytd-section-list-renderer,
+    body[data-focustube-blank-page="true"] ytd-browse[page-subtype="home"] #contents,
+    body[data-focustube-blank-page="true"] ytd-rich-item-renderer,
+    body[data-focustube-blank-page="true"] ytd-video-renderer,
+    body[data-focustube-blank-page="true"] ytd-shelf-renderer,
+    body[data-focustube-blank-page="true"] ytd-compact-video-renderer {
+      display: none !important;
+    }
+  `;
+}
+
+function syncExtensionState() {
+  chrome.storage.local.get(["focusTubeState"], (result) => {
+    const state = normalizeState(result.focusTubeState || {});
+    applyFocusStyles(state);
+  });
+}
+
+chrome.storage.local.onChanged.addListener((changes) => {
+  if (changes.focusTubeState) {
+    syncExtensionState();
   }
 });
 
-// Start observing the target node for configured mutations
+syncExtensionState();
+
+// Use a MutationObserver to handle dynamic content/AJAX
+const observer = new MutationObserver(() => {
+  syncExtensionState();
+});
+
 observer.observe(document.body, { childList: true, subtree: true });
 
 function addPieChartButton() {
-  if (document.querySelector("#pieChartButton")) return; // Avoid duplicate buttons
+  if (document.querySelector("#pieChartButton")) return;
 
   const header = document.querySelector("#container.ytd-masthead");
   if (header) {
